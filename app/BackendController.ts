@@ -1,9 +1,21 @@
 export async function fetchDevices() {
-  const response = await fetch("http://localhost:3000/devices");
-  if (!response.ok) {
-    console.log("ERROR:", response);
-    throw new Error(`HTTP error! Status: ${response.status}`);
+  return await fetchFrom("http://localhost:3000/devices");
+}
+
+export async function fetchConnections() {
+  return await fetchFrom("http://localhost:3000/connections");
+}
+
+async function fetchFrom(url: string) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.log("ERROR:", response);
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const body = await response.json();
+    return body;
+  } catch (e) {
+    console.log("EXCEPTION:", e);
   }
-  const body = await response.json();
-  return body;
 }

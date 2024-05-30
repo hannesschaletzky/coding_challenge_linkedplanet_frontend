@@ -4,13 +4,8 @@ import { json, type MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
 import { Network } from "vis-network";
-import { fetchDevices } from "~/BackendController";
-
-interface Device {
-  id: number;
-  name: string;
-  device_type_name: string;
-}
+import { fetchConnections, fetchDevices } from "~/BackendController";
+import { Device, Connection } from "~/Interfaces";
 
 export const meta: MetaFunction = () => {
   return [
@@ -24,6 +19,7 @@ export const meta: MetaFunction = () => {
 
 export async function loader() {
   const raw_devices = await fetchDevices();
+  const raw_connections = await fetchConnections();
 
   const devices: Device[] = [];
   for (const raw_device of raw_devices) {
@@ -35,14 +31,26 @@ export async function loader() {
     devices.push(device);
   }
 
+  const connections: Connection[] = [];
+  for (const raw_connection of raw_connections) {
+    const connection: Connection = {
+      id: raw_connection.id,
+      source_device_name: raw_connection.source_device_name,
+      target_device_name: raw_connection.target_device_name,
+    };
+    connections.push(connection);
+  }
+
   return json({
     devices: devices,
+    connections: connections,
   });
 }
 
 export default function Index() {
   const loaderData = useLoaderData<typeof loader>();
-  console.log("device-count:", loaderData.devices.length);
+  console.log("devices:", loaderData.devices.length);
+  console.log("connections:", loaderData.connections.length);
 
   useEffect(() => {
     const nodes = [
