@@ -84,13 +84,16 @@ export default function Index() {
     // see options here: https://visjs.github.io/vis-network/docs/network/index.html
     const options = {
       nodes: {
+        color: "#d8fdff",
         shape: "dot",
-        size: 20,
+        size: 25,
         font: {
           size: 18,
         },
       },
       edges: {
+        color: "#777777",
+        smooth: true,
         arrows: "to",
       },
       physics: false,
@@ -98,7 +101,8 @@ export default function Index() {
         hierarchical: {
           direction: "LR",
           sortMethod: "directed",
-          levelSeparation: 200, //default: 150
+          levelSeparation: 250, //default: 150
+          nodeSpacing: 150, //default: 100
         },
       },
     };
@@ -108,7 +112,9 @@ export default function Index() {
 
   return (
     <>
-      <h1 className="bg-slate-400 text-center">Device Signal Chain</h1>
+      <div className="p-2 text-center text-2xl bg-[#d8fdff]">
+        Device Signal Chain
+      </div>
       <div className="flex justify-center items-center">
         <div id="mynetwork"></div>
         <h2 id="eventSpanHeading"></h2>
