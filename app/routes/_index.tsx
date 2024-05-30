@@ -45,33 +45,25 @@ export default function Index() {
   console.log("device-count:", loaderData.devices.length);
 
   useEffect(() => {
-    // create an array with nodes
     const nodes = [
-      { id: 1, label: "Node 1" },
-      { id: 2, label: "Node 2" },
-      {
-        id: 3,
-        label: "Node 3:\nLeft-Aligned",
-        font: { face: "Monospace", align: "left" },
-      },
-      { id: 4, label: "Node 4" },
-      {
-        id: 5,
-        label: "Node 5\nLeft-Aligned box",
-        shape: "box",
-        font: { face: "Monospace", align: "left" },
-      },
+      { id: 0, label: "0" },
+      { id: 1, label: "1" },
+      { id: 2, label: "2" },
+      { id: 3, label: "3" },
+      { id: 4, label: "4" },
+      { id: 5, label: "5" },
+      { id: 6, label: "6" },
     ];
 
-    // create an array with edges
     const edges = [
-      { from: 1, to: 2, label: "middle", font: { align: "middle" } },
-      { from: 1, to: 3, label: "top", font: { align: "top" } },
-      { from: 2, to: 4, label: "horizontal", font: { align: "horizontal" } },
-      { from: 2, to: 5, label: "bottom", font: { align: "bottom" } },
+      { from: 0, to: 4 },
+      { from: 1, to: 4 },
+      { from: 2, to: 4 },
+      { from: 3, to: 5 },
+      { from: 4, to: 6 },
+      { from: 5, to: 6 },
     ];
 
-    // create a network
     const container = document.getElementById("mynetwork");
     if (container == null) {
       throw new Error("#mynetwork could not be found");
@@ -80,23 +72,30 @@ export default function Index() {
       nodes: nodes,
       edges: edges,
     };
-    const options = { physics: false };
-    const network = new Network(container, data, options);
-
-    network.on("click", function (params: { event: string }) {
-      params.event = "[original event]";
-      document.getElementById("eventSpanHeading")!.innerText = "Click event:";
-      document.getElementById("eventSpanContent")!.innerText = JSON.stringify(
-        params,
-        null,
-        4
-      );
-    });
+    // see options here: https://visjs.github.io/vis-network/docs/network/index.html
+    const options = {
+      nodes: {
+        shape: "dot",
+        size: 20,
+      },
+      edges: {
+        arrows: "to",
+      },
+      physics: false,
+      layout: {
+        hierarchical: {
+          direction: "LR",
+          sortMethod: "directed",
+          levelSeparation: 200, //default: 150
+        },
+      },
+    };
+    new Network(container, data, options);
   }, []);
 
   return (
     <>
-      <h1 className="bg-slate-300 text-center">Network</h1>
+      <h1 className="bg-slate-400 text-center">Device Signal Chain</h1>
       <div className="flex justify-center items-center">
         <div id="mynetwork"></div>
         <h2 id="eventSpanHeading"></h2>
