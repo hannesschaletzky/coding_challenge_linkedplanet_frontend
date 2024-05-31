@@ -2,8 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-#mynetwork {
-  width: 100vw;
+.root_container {
   height: 100vh;
-  border: 1px solid lightgray;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+}
+
+.network-container {
+  flex: 1 1 auto; /* ensure the network container takes up remaining space */
+}
+
+#mynetwork {
+  height: 100%;
 }
