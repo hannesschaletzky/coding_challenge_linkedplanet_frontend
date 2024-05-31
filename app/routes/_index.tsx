@@ -96,8 +96,8 @@ export async function loader() {
   };
 
   console.log("devices", devices.length);
-  console.log("devicesInUse", usedDevices.length);
-  console.log("devicesNotInUse", idleDevices.length);
+  console.log("idleDevices", idleDevices.length);
+  console.log("usedDevices", usedDevices.length);
   console.log("connections", connections.length);
   console.log("nodes", nodes.length);
   console.log("edges", edges.length);
@@ -134,7 +134,13 @@ export default function Index() {
 
   return (
     <div className="root_container">
-      {dialogOpen && <Dialog closeConnectionClick={closeConnectionClick} />}
+      {dialogOpen && (
+        <Dialog
+          closeConnectionClick={closeConnectionClick}
+          idleDevices={loaderData.idleDevices}
+          usedDevices={loaderData.usedDevices}
+        />
+      )}
       <div className="p-2 text-center text-2xl">Device Signal Chain</div>
       <div className="flex justify-center items-center p-2">
         <button
