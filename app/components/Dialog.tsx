@@ -1,4 +1,4 @@
-import { DROPDOWN_INITAL_VALUE } from "~/Controller";
+import { DROPDOWN_INITAL_VALUE } from "~/IndexController";
 import { Device, DialogSaveMode } from "~/Interfaces";
 
 interface Props {

@@ -1,7 +1,8 @@
-import { json, type MetaFunction } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { ActionFunctionArgs, json, type MetaFunction } from "@remix-run/node";
+import { redirect, useLoaderData } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { Network } from "vis-network";
+import { postConnection } from "~/BackendController";
 
 import {
   determineTargetDevices,
@@ -12,12 +13,13 @@ import {
   getDeviceTypeOutputs,
   filterUsedDevices,
   filterIdleDevices,
-} from "~/Controller";
+  postConnectionToIndex,
+} from "~/IndexController";
 import { Device, DialogSaveMode } from "~/Interfaces";
 import {
   assembleEdgesAndNodes,
   assembleNetworkProperties,
-} from "~/NetworkController";
+} from "~/VisController";
 import Dialog from "~/components/Dialog";
 
 export const meta: MetaFunction = () => {
@@ -30,9 +32,21 @@ export const meta: MetaFunction = () => {
   ];
 };
 
+export async function action({ request }: ActionFunctionArgs) {
+  const body = await request.formData();
+  const source = body.get("source");
+  const target = body.get("target");
+  console.log(source, "to", target);
+  if (source != null && target != null) {
+    await postConnection(source.toString(), target.toString());
+  }
+  return redirect(`/?index`);
+}
+
 export async function loader() {
   const devices = await getDevices();
   const connections = await getConnections();
+  console.log("connections", connections.length);
   const deviceTypeOutputs = await getDeviceTypeOutputs();
   const usedDevices = filterUsedDevices(connections, devices);
   const idleDevices = filterIdleDevices(usedDevices, devices);
@@ -58,7 +72,7 @@ export default function Index() {
   const [source, setSource] = useState(DROPDOWN_INITAL_VALUE);
   const [target, setTarget] = useState(DROPDOWN_INITAL_VALUE);
   const [targetDevices, setTargetDevices] = useState<Device[]>([]);
-  const [targetKey, setTargetKey] = useState(0); // force re-render, because same category lets react use the component with the previous selection
+  const [targetKey, setTargetKey] = useState(0); // force re-render of dialog, because same category lets react use the component with the previous selection
   const [dialogSaveMode, setDialogSaveMode] = useState(DialogSaveMode.initial);
 
   useEffect(() => {
@@ -66,11 +80,14 @@ export default function Index() {
     if (container == null) {
       throw new Error("#mynetwork could not be found");
     }
-    new Network(
+    const network = new Network(
       container,
       loaderData.edgesAndNodes,
       loaderData.networkProperties
     );
+    return () => {
+      network.destroy(); // Clean up the network instance on unmount
+    };
   }, [loaderData.edgesAndNodes, loaderData.networkProperties]);
 
   useEffect(() => {
@@ -121,7 +138,8 @@ export default function Index() {
   }
 
   function saveClick() {
-    console.log("save");
+    postConnectionToIndex(source, target);
+    closeDialogClick();
   }
 
   return (
