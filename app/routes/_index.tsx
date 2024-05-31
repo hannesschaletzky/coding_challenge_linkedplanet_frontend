@@ -2,8 +2,22 @@ import { json, type MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { Network } from "vis-network";
-import { fetchConnections, fetchDevices } from "~/BackendController";
-import { Device, Connection } from "~/Interfaces";
+
+import {
+  determineTargetDevices,
+  determineDeviceType,
+  DROPDOWN_INITAL_VALUE,
+  getDevices,
+  getConnections,
+  getDeviceTypeOutputs,
+  filterUsedDevices,
+  filterIdleDevices,
+} from "~/Controller";
+import { Device, DialogSaveMode } from "~/Interfaces";
+import {
+  assembleEdgesAndNodes,
+  assembleNetworkProperties,
+} from "~/NetworkController";
 import Dialog from "~/components/Dialog";
 
 export const meta: MetaFunction = () => {
@@ -17,128 +31,113 @@ export const meta: MetaFunction = () => {
 };
 
 export async function loader() {
-  const raw_devices = await fetchDevices();
-  const raw_connections = await fetchConnections();
+  const devices = await getDevices();
+  const connections = await getConnections();
+  const deviceTypeOutputs = await getDeviceTypeOutputs();
+  const usedDevices = filterUsedDevices(connections, devices);
+  const idleDevices = filterIdleDevices(usedDevices, devices);
 
-  // parse devices
-  const devices: Device[] = [];
-  for (const raw_device of raw_devices) {
-    const device: Device = {
-      id: raw_device.id,
-      name: raw_device.name,
-      device_type_name: raw_device.device_type_name,
-    };
-    devices.push(device);
-  }
-
-  // parse connections
-  const connections: Connection[] = [];
-  for (const raw_connection of raw_connections) {
-    const connection: Connection = {
-      id: raw_connection.id,
-      source_device_name: raw_connection.source_device_name,
-      target_device_name: raw_connection.target_device_name,
-    };
-    connections.push(connection);
-  }
-
-  // used devices
-  const devicesFromConnetions: string[] = connections.flatMap((connection) => [
-    connection.source_device_name,
-    connection.target_device_name,
-  ]);
-  const deviceNamesSet: Set<string> = new Set(devicesFromConnetions);
-  const uniqueDeviceNames: string[] = Array.from(deviceNamesSet);
-  const usedDevices: Device[] = uniqueDeviceNames.map(
-    (deviceName) => devices.find((device) => device.name == deviceName)!
-  );
-
-  // idle devices
-  const idleDevices = devices.filter((device) => !usedDevices.includes(device));
-
-  // network data
-  const nodes = usedDevices.map((device) => {
-    return { id: device.name, label: device.name };
-  });
-  const edges = connections.map((con) => {
-    return { from: con.source_device_name, to: con.target_device_name };
-  });
-  const networkData = {
-    nodes: nodes,
-    edges: edges,
-  };
-
-  // network options
-  // docs: https://visjs.github.io/vis-network/docs/network/index.html
-  const networkOptions = {
-    nodes: {
-      color: "#d8fdff",
-      shape: "dot",
-      size: 25,
-      font: {
-        size: 18,
-      },
-    },
-    edges: {
-      color: "#777777",
-      smooth: true,
-      arrows: "to",
-    },
-    physics: false,
-    layout: {
-      hierarchical: {
-        direction: "LR",
-        sortMethod: "directed",
-        levelSeparation: 250, //default: 150
-        nodeSpacing: 150, //default: 100
-      },
-    },
-  };
-
-  console.log("devices", devices.length);
-  console.log("idleDevices", idleDevices.length);
-  console.log("usedDevices", usedDevices.length);
-  console.log("connections", connections.length);
-  console.log("nodes", nodes.length);
-  console.log("edges", edges.length);
+  const edgesAndNodes = assembleEdgesAndNodes(usedDevices, connections);
+  const networkProperties = assembleNetworkProperties();
 
   return json({
     devices: devices,
     connections: connections,
     usedDevices: usedDevices,
     idleDevices: idleDevices,
-    networkData: networkData,
-    networkOptions: networkOptions,
+    deviceTypeOutputs: deviceTypeOutputs,
+    edgesAndNodes: edgesAndNodes,
+    networkProperties: networkProperties,
   });
 }
 
 export default function Index() {
   const loaderData = useLoaderData<typeof loader>();
+
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [source, setSource] = useState(DROPDOWN_INITAL_VALUE);
+  const [target, setTarget] = useState(DROPDOWN_INITAL_VALUE);
+  const [targetDevices, setTargetDevices] = useState<Device[]>([]);
+  const [targetKey, setTargetKey] = useState(0); // force re-render, because same category lets react use the component with the previous selection
+  const [dialogSaveMode, setDialogSaveMode] = useState(DialogSaveMode.initial);
 
   useEffect(() => {
     const container = document.getElementById("mynetwork");
     if (container == null) {
       throw new Error("#mynetwork could not be found");
     }
-    new Network(container, loaderData.networkData, loaderData.networkOptions);
-  }, [loaderData.networkData, loaderData.networkOptions]);
+    new Network(
+      container,
+      loaderData.edgesAndNodes,
+      loaderData.networkProperties
+    );
+  }, [loaderData.edgesAndNodes, loaderData.networkProperties]);
+
+  useEffect(() => {
+    if (source == DROPDOWN_INITAL_VALUE) {
+      setTargetDevices([]);
+    } else {
+      const deviceType = determineDeviceType(source, loaderData.devices);
+      if (deviceType == undefined) {
+        throw new Error(`Could not determine device type of ${source}`);
+      }
+      const newTargetDevices = determineTargetDevices(
+        deviceType,
+        loaderData.deviceTypeOutputs,
+        loaderData.devices
+      );
+      setTargetDevices(newTargetDevices);
+      setTarget(DROPDOWN_INITAL_VALUE);
+      setTargetKey((prevKey) => prevKey + 1);
+    }
+  }, [loaderData.deviceTypeOutputs, loaderData.devices, source]);
+
+  useEffect(() => {
+    if (source != DROPDOWN_INITAL_VALUE && target != DROPDOWN_INITAL_VALUE) {
+      if (
+        loaderData.connections.filter(
+          (connection) =>
+            connection.source_device_name == source &&
+            connection.target_device_name == target
+        ).length == 1
+      ) {
+        setDialogSaveMode(DialogSaveMode.alreadyExists);
+      } else {
+        setDialogSaveMode(DialogSaveMode.noErrors);
+      }
+    } else if (target == DROPDOWN_INITAL_VALUE) {
+      setDialogSaveMode(DialogSaveMode.initial);
+    }
+  }, [loaderData.connections, source, target]);
 
   function addConnectionClick() {
     setDialogOpen(true);
   }
 
-  function closeConnectionClick() {
+  function closeDialogClick() {
     setDialogOpen(false);
+    setSource(DROPDOWN_INITAL_VALUE);
+    setDialogSaveMode(DialogSaveMode.initial);
+  }
+
+  function saveClick() {
+    console.log("save");
   }
 
   return (
     <div className="root_container">
       {dialogOpen && (
         <Dialog
-          closeConnectionClick={closeConnectionClick}
+          closeDialogClick={closeDialogClick}
+          saveClick={saveClick}
           idleDevices={loaderData.idleDevices}
           usedDevices={loaderData.usedDevices}
+          onSourceChange={setSource}
+          onTargetChange={setTarget}
+          targetDevices={targetDevices}
+          source={source}
+          dialogSaveMode={dialogSaveMode}
+          targetKey={targetKey}
         />
       )}
       <div className="p-2 text-center text-2xl">Device Signal Chain</div>

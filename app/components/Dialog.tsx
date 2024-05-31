@@ -1,32 +1,40 @@
-import { Device } from "~/Interfaces";
+import { DROPDOWN_INITAL_VALUE } from "~/Controller";
+import { Device, DialogSaveMode } from "~/Interfaces";
 
 interface Props {
-  closeConnectionClick: () => void;
+  closeDialogClick: () => void;
+  saveClick: () => void;
   idleDevices: Device[];
   usedDevices: Device[];
+  onSourceChange: (e: string) => void;
+  onTargetChange: (e: string) => void;
+  source: string;
+  targetDevices: Device[];
+  dialogSaveMode: DialogSaveMode;
+  targetKey: number;
 }
 
 export default function Dialog(props: Props) {
-  function onSourceChange(e: string) {
-    console.log(e);
-  }
-
   return (
-    <div className="absolute top-0 left-0 bottom-0 right-0 bg-slate-100 z-10 flex flex-col justify-center items-center opacity-90">
+    <div className="absolute top-0 left-0 bottom-0 right-0 bg-slate-100 z-10 flex flex-col justify-center items-center opacity-95">
+      <div>✅ = already in use</div>
+      <br />
       {/* SOURCE DEVICE */}
       <form className="">
         <label
           htmlFor="source_device"
           className="block mb-2 text-sm font-medium text-gray-900"
         >
-          Source device
+          Source
         </label>
         <select
           id="source_device"
           className="bg-gray-200 text-gray-900 text-sm rounded-lg block w-full p-2.5"
-          onChange={(e) => onSourceChange(e.target.value)}
+          onChange={(e) => props.onSourceChange(e.target.value)}
         >
-          <option defaultValue="Choose...">Choose...</option>
+          <option defaultValue={DROPDOWN_INITAL_VALUE}>
+            {DROPDOWN_INITAL_VALUE}
+          </option>
           {props.usedDevices.map((device) => (
             <option key={device.id} value={device.name}>
               ✅ {device.name}
@@ -41,38 +49,55 @@ export default function Dialog(props: Props) {
       </form>
 
       <br />
+      {props.targetDevices.length == 0 &&
+        props.source != DROPDOWN_INITAL_VALUE && (
+          <div>This device has no outgoing connections...</div>
+        )}
+
       {/* TARGET DEVICE */}
-      <form className="">
-        <label
-          htmlFor="target_device"
-          className="block mb-2 text-sm font-medium text-gray-900"
-        >
-          Target device
-        </label>
-        <select
-          id="target_device"
-          className="bg-gray-200 text-gray-900 text-sm rounded-lg block w-full p-2.5"
-        >
-          <option defaultValue="Choose...">Choose...</option>
-          {props.usedDevices.map((device) => (
-            <option key={device.id} value={device.name}>
-              ✅ {device.name}
+      {props.targetDevices.length > 0 && (
+        <form className="">
+          <label
+            htmlFor="target_device"
+            className="block mb-2 text-sm font-medium text-gray-900"
+          >
+            Target
+          </label>
+          <select
+            id="target_device"
+            className="bg-gray-200 text-gray-900 text-sm rounded-lg block w-full p-2.5"
+            onChange={(e) => props.onTargetChange(e.target.value)}
+            key={props.targetKey} // Force re-render
+          >
+            <option defaultValue={DROPDOWN_INITAL_VALUE}>
+              {DROPDOWN_INITAL_VALUE}
             </option>
-          ))}
-          {props.idleDevices.map((device) => (
-            <option key={device.id} value={device.name}>
-              {device.name}
-            </option>
-          ))}
-        </select>
-      </form>
+            {props.targetDevices.map((device) => (
+              <option key={device.id} value={device.name}>
+                {device.name}
+              </option>
+            ))}
+          </select>
+        </form>
+      )}
 
       <br />
-      <div>✅ = device is already installed</div>
-      <br />
+
+      {props.dialogSaveMode == DialogSaveMode.alreadyExists && (
+        <div>This connection already exists...</div>
+      )}
+      {props.dialogSaveMode == DialogSaveMode.noErrors && (
+        <button
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4"
+          onClick={() => props.saveClick()}
+        >
+          Save
+        </button>
+      )}
+
       <button
         className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4"
-        onClick={() => props.closeConnectionClick()}
+        onClick={() => props.closeDialogClick()}
       >
         Close
       </button>
