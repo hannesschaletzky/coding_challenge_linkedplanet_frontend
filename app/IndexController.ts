@@ -42,8 +42,23 @@ export function filterUsedDevices(
   return usedDevices;
 }
 
-export function filterIdleDevices(usedDevices: Device[], devices: Device[]) {
-  return devices.filter((device) => !usedDevices.includes(device));
+export function extractMatchingDevices(
+  allDevices: Device[],
+  devicesToMatch: Device[]
+) {
+  return allDevices.filter((device) =>
+    devicesToMatch.map((device) => device.name).includes(device.name)
+  );
+}
+
+export function extractNotMatchingDevices(
+  allDevices: Device[],
+  devicesToMatch: Device[]
+) {
+  return allDevices.filter(
+    (device) =>
+      !devicesToMatch.map((device) => device.name).includes(device.name)
+  );
 }
 
 export async function getDeviceTypeOutputs() {
@@ -61,7 +76,7 @@ export async function getDevices() {
   return parseDevices(raw_devices);
 }
 
-function parseDeviceTypeOutputs(raw_deviceTypeOutputs: any) {
+export function parseDeviceTypeOutputs(raw_deviceTypeOutputs: any) {
   const deviceTypeOutputs: DeviceTypeOutput[] = [];
   for (const raw_deviceTypeOutput of raw_deviceTypeOutputs) {
     const deviceTypeOutput: DeviceTypeOutput = {
@@ -74,7 +89,7 @@ function parseDeviceTypeOutputs(raw_deviceTypeOutputs: any) {
   return deviceTypeOutputs;
 }
 
-function parseConnections(raw_connections: any) {
+export function parseConnections(raw_connections: any) {
   const connections: Connection[] = [];
   for (const raw_connection of raw_connections) {
     const connection: Connection = {
@@ -87,7 +102,7 @@ function parseConnections(raw_connections: any) {
   return connections;
 }
 
-function parseDevices(raw_devices: any) {
+export function parseDevices(raw_devices: any) {
   const devices: Device[] = [];
   for (const raw_device of raw_devices) {
     const device: Device = {

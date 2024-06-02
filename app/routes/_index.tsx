@@ -12,7 +12,8 @@ import {
   getConnections,
   getDeviceTypeOutputs,
   filterUsedDevices,
-  filterIdleDevices,
+  extractMatchingDevices,
+  extractNotMatchingDevices,
 } from "~/IndexController";
 import { Device, DialogSaveMode } from "~/Interfaces";
 import {
@@ -56,7 +57,7 @@ export async function loader() {
   const connections = await getConnections();
   const deviceTypeOutputs = await getDeviceTypeOutputs();
   const usedDevices = filterUsedDevices(connections, devices);
-  const idleDevices = filterIdleDevices(usedDevices, devices);
+  const idleDevices = extractNotMatchingDevices(devices, usedDevices);
 
   const edgesAndNodes = assembleEdgesAndNodes(usedDevices, connections);
   const networkProperties = assembleNetworkProperties();
@@ -127,17 +128,15 @@ export default function Index() {
         loaderData.devices
       );
 
-      const usedTargetDevices = targetDevices.filter((targetDevice) =>
+      const usedTargetDevices = extractMatchingDevices(
+        targetDevices,
         loaderData.usedDevices
-          .map((device) => device.name)
-          .includes(targetDevice.name)
       );
-      const idleTargetDevices = targetDevices.filter(
-        (targetDevice) =>
-          !loaderData.usedDevices
-            .map((device) => device.name)
-            .includes(targetDevice.name)
+      const idleTargetDevices = extractMatchingDevices(
+        targetDevices,
+        loaderData.idleDevices
       );
+
       setUsedTargetDevices(usedTargetDevices);
       setIdleTargetDevices(idleTargetDevices);
       setTarget(DROPDOWN_INITAL_VALUE);
@@ -146,6 +145,7 @@ export default function Index() {
   }, [
     loaderData.deviceTypeOutputs,
     loaderData.devices,
+    loaderData.idleDevices,
     loaderData.usedDevices,
     source,
   ]);
