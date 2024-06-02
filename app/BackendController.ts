@@ -1,12 +1,14 @@
+const BASE_URL = "http://localhost:3000";
+
 export async function deleteConnection(id: string) {
-  await fetch(`http://localhost:3000/connections/${id}`, {
+  await fetch(`${BASE_URL}/connections/${id}`, {
     method: "DELETE",
   });
 }
 
 export async function postConnection(source: string, target: string) {
   try {
-    const response = await fetch("http://localhost:3000/connections", {
+    const response = await fetch(`${BASE_URL}/connections`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -25,15 +27,15 @@ export async function postConnection(source: string, target: string) {
 }
 
 export async function fetchDevices() {
-  return await fetchFrom("http://localhost:3000/devices");
+  return await fetchFrom(`${BASE_URL}/devices`);
 }
 
 export async function fetchConnections() {
-  return await fetchFrom("http://localhost:3000/connections");
+  return await fetchFrom(`${BASE_URL}/connections`);
 }
 
 export async function fetchDeviceTypeOutputs() {
-  return await fetchFrom("http://localhost:3000/device_type_outputs");
+  return await fetchFrom(`${BASE_URL}/device_type_outputs`);
 }
 
 async function fetchFrom(url: string) {
