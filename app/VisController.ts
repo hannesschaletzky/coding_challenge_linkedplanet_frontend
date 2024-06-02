@@ -5,7 +5,11 @@ export function assembleEdgesAndNodes(
   connections: Connection[]
 ) {
   const nodes = usedDevices.map((device) => {
-    return { id: device.name, label: device.name };
+    return {
+      id: device.name,
+      label: device.name,
+      group: device.device_type_name,
+    };
   });
   const edges = connections.map((con) => {
     return {
