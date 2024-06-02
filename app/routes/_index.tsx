@@ -78,10 +78,11 @@ export default function Index() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [source, setSource] = useState(DROPDOWN_INITAL_VALUE);
   const [target, setTarget] = useState(DROPDOWN_INITAL_VALUE);
-  const [targetDevices, setTargetDevices] = useState<Device[]>([]);
   const [targetKey, setTargetKey] = useState(0); // force re-render of dialog, because same category lets react use the component with the previous selection
   const [dialogSaveMode, setDialogSaveMode] = useState(DialogSaveMode.initial);
   const [selectedEdge, setSelectedEdge] = useState("");
+  const [usedTargetDevices, setUsedTargetDevices] = useState<Device[]>([]);
+  const [idleTargetDevices, setIdleTargetDevices] = useState<Device[]>([]);
 
   useEffect(() => {
     setDialogOpen(false);
@@ -113,22 +114,41 @@ export default function Index() {
 
   useEffect(() => {
     if (source == DROPDOWN_INITAL_VALUE) {
-      setTargetDevices([]);
+      setUsedTargetDevices([]);
+      setIdleTargetDevices([]);
     } else {
       const deviceType = determineDeviceType(source, loaderData.devices);
       if (deviceType == undefined) {
         throw new Error(`Could not determine device type of ${source}`);
       }
-      const newTargetDevices = determineTargetDevices(
+      const targetDevices = determineTargetDevices(
         deviceType,
         loaderData.deviceTypeOutputs,
         loaderData.devices
       );
-      setTargetDevices(newTargetDevices);
+
+      const usedTargetDevices = targetDevices.filter((targetDevice) =>
+        loaderData.usedDevices
+          .map((device) => device.name)
+          .includes(targetDevice.name)
+      );
+      const idleTargetDevices = targetDevices.filter(
+        (targetDevice) =>
+          !loaderData.usedDevices
+            .map((device) => device.name)
+            .includes(targetDevice.name)
+      );
+      setUsedTargetDevices(usedTargetDevices);
+      setIdleTargetDevices(idleTargetDevices);
       setTarget(DROPDOWN_INITAL_VALUE);
       setTargetKey((prevKey) => prevKey + 1);
     }
-  }, [loaderData.deviceTypeOutputs, loaderData.devices, source]);
+  }, [
+    loaderData.deviceTypeOutputs,
+    loaderData.devices,
+    loaderData.usedDevices,
+    source,
+  ]);
 
   useEffect(() => {
     if (source != DROPDOWN_INITAL_VALUE && target != DROPDOWN_INITAL_VALUE) {
@@ -161,9 +181,10 @@ export default function Index() {
           closeDialogClick={closeDialogClick}
           idleDevices={loaderData.idleDevices}
           usedDevices={loaderData.usedDevices}
+          usedTargetDevices={usedTargetDevices}
+          idleTargetDevices={idleTargetDevices}
           onSourceChange={setSource}
           onTargetChange={setTarget}
-          targetDevices={targetDevices}
           source={source}
           target={target}
           dialogSaveMode={dialogSaveMode}
@@ -186,7 +207,7 @@ export default function Index() {
               className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
               type="submit"
             >
-              Delete
+              Delete connection
             </button>
           </Form>
         )}

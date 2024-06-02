@@ -6,11 +6,12 @@ interface Props {
   closeDialogClick: () => void;
   idleDevices: Device[];
   usedDevices: Device[];
+  usedTargetDevices: Device[];
+  idleTargetDevices: Device[];
   onSourceChange: (e: string) => void;
   onTargetChange: (e: string) => void;
   source: string;
   target: string;
-  targetDevices: Device[];
   dialogSaveMode: DialogSaveMode;
   targetKey: number;
 }
@@ -18,7 +19,7 @@ interface Props {
 export default function Dialog(props: Props) {
   return (
     <div className="absolute top-0 left-0 bottom-0 right-0 bg-slate-100 z-10 flex flex-col justify-center items-center opacity-95">
-      <div>✅ = already in use</div>
+      <div>✅ = device already in use</div>
       <br />
       {/* SOURCE DEVICE */}
       <form className="">
@@ -50,13 +51,13 @@ export default function Dialog(props: Props) {
       </form>
 
       <br />
-      {props.targetDevices.length == 0 &&
+      {props.usedTargetDevices.length + props.idleTargetDevices.length == 0 &&
         props.source != DROPDOWN_INITAL_VALUE && (
           <div>This device has no outgoing connections...</div>
         )}
 
       {/* TARGET DEVICE */}
-      {props.targetDevices.length > 0 && (
+      {props.usedTargetDevices.length + props.idleTargetDevices.length > 0 && (
         <form className="">
           <label
             htmlFor="target_device"
@@ -73,7 +74,12 @@ export default function Dialog(props: Props) {
             <option defaultValue={DROPDOWN_INITAL_VALUE}>
               {DROPDOWN_INITAL_VALUE}
             </option>
-            {props.targetDevices.map((device) => (
+            {props.usedTargetDevices.map((device) => (
+              <option key={device.id} value={device.name}>
+                ✅ {device.name}
+              </option>
+            ))}
+            {props.idleTargetDevices.map((device) => (
               <option key={device.id} value={device.name}>
                 {device.name}
               </option>
