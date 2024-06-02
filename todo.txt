@@ -1,0 +1,4 @@
+- cluster visualization (newly added connection should not span through entire visualization)
+  -> do this by using the level attribute from the node
+- sort devices in cluster alphabetically
+- prefill add connection dialog with source when node was selected
