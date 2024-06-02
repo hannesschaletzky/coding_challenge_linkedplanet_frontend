@@ -1,3 +1,9 @@
+export async function deleteConnection(id: string) {
+  await fetch(`http://localhost:3000/connections/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export async function postConnection(source: string, target: string) {
   try {
     const response = await fetch("http://localhost:3000/connections", {
@@ -11,8 +17,7 @@ export async function postConnection(source: string, target: string) {
       }),
     });
     if (!response.ok) {
-      console.log("ERROR:", response);
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      throw new Error(await response.text());
     }
   } catch (e) {
     console.log("ERROR", e);

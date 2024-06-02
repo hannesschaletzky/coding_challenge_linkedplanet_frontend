@@ -8,18 +8,14 @@ import {
 
 export const DROPDOWN_INITAL_VALUE = "Choose...";
 
-export function postConnectionToIndex(source: string, target: string) {
+export function triggerPostCon(source: string, target: string) {
   const formData = new FormData();
   formData.append("source", source);
   formData.append("target", target);
-  try {
-    fetch("/?index", {
-      method: "POST",
-      body: formData,
-    });
-  } catch (e) {
-    console.log("ERROR:", e);
-  }
+  fetch("/?index", {
+    method: "POST",
+    body: formData,
+  });
 }
 
 export function determineDeviceType(deviceName: string, devices: Device[]) {

@@ -8,7 +8,11 @@ export function assembleEdgesAndNodes(
     return { id: device.name, label: device.name };
   });
   const edges = connections.map((con) => {
-    return { from: con.source_device_name, to: con.target_device_name };
+    return {
+      id: con.id,
+      from: con.source_device_name,
+      to: con.target_device_name,
+    };
   });
   return {
     nodes: nodes,

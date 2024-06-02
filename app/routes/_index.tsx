@@ -1,8 +1,8 @@
 import { ActionFunctionArgs, json, type MetaFunction } from "@remix-run/node";
-import { redirect, useLoaderData } from "@remix-run/react";
+import { Form, redirect, useLoaderData } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { Network } from "vis-network";
-import { postConnection } from "~/BackendController";
+import { deleteConnection, postConnection } from "~/BackendController";
 
 import {
   determineTargetDevices,
@@ -13,7 +13,7 @@ import {
   getDeviceTypeOutputs,
   filterUsedDevices,
   filterIdleDevices,
-  postConnectionToIndex,
+  triggerPostCon,
 } from "~/IndexController";
 import { Device, DialogSaveMode } from "~/Interfaces";
 import {
@@ -34,12 +34,22 @@ export const meta: MetaFunction = () => {
 
 export async function action({ request }: ActionFunctionArgs) {
   const body = await request.formData();
-  const source = body.get("source");
-  const target = body.get("target");
-  console.log(source, "to", target);
-  if (source != null && target != null) {
-    await postConnection(source.toString(), target.toString());
+  if (request.method == "POST") {
+    const source = body.get("source");
+    const target = body.get("target");
+    console.log(source, "to", target);
+    if (source != null && target != null) {
+      await postConnection(source.toString(), target.toString());
+    }
+  } else if (request.method == "DELETE") {
+    console.log(body);
+    const id = body.get("id");
+    console.log("delete", id);
+    if (id != null) {
+      await deleteConnection(id.toString());
+    }
   }
+
   return redirect(`/?index`);
 }
 
@@ -74,20 +84,31 @@ export default function Index() {
   const [targetDevices, setTargetDevices] = useState<Device[]>([]);
   const [targetKey, setTargetKey] = useState(0); // force re-render of dialog, because same category lets react use the component with the previous selection
   const [dialogSaveMode, setDialogSaveMode] = useState(DialogSaveMode.initial);
+  const [selectedEdge, setSelectedEdge] = useState("");
+  const [network, setNetwork] = useState<Network>();
 
   useEffect(() => {
     const container = document.getElementById("mynetwork");
     if (container == null) {
       throw new Error("#mynetwork could not be found");
     }
-    const network = new Network(
+    const newNetwork = new Network(
       container,
       loaderData.edgesAndNodes,
       loaderData.networkProperties
     );
-    return () => {
-      network.destroy(); // Clean up the network instance on unmount
-    };
+
+    newNetwork.on("selectEdge", (params) => {
+      if (params.edges.length == 1) {
+        setSelectedEdge(params.edges[0]);
+      }
+    });
+    newNetwork.on("deselectEdge", () => {
+      setSelectedEdge("");
+    });
+
+    console.log("new network");
+    setNetwork(newNetwork);
   }, [loaderData.edgesAndNodes, loaderData.networkProperties]);
 
   useEffect(() => {
@@ -138,7 +159,7 @@ export default function Index() {
   }
 
   function saveClick() {
-    postConnectionToIndex(source, target);
+    triggerPostCon(source, target);
     closeDialogClick();
   }
 
@@ -159,13 +180,25 @@ export default function Index() {
         />
       )}
       <div className="p-2 text-center text-2xl">Device Signal Chain</div>
-      <div className="flex justify-center items-center p-2">
+      <div className="flex justify-center items-center p-2 gap-2">
         <button
           className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
           onClick={() => addConnectionClick()}
         >
           Add connection
         </button>
+
+        {selectedEdge != "" && (
+          <Form method="delete">
+            <input hidden name="id" value={selectedEdge} readOnly />
+            <button
+              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+              type="submit"
+            >
+              Delete
+            </button>
+          </Form>
+        )}
       </div>
       <div className="flex justify-center items-center network-container">
         <div id="mynetwork"></div>
