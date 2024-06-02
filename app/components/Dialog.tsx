@@ -1,14 +1,15 @@
+import { Form } from "@remix-run/react";
 import { DROPDOWN_INITAL_VALUE } from "~/IndexController";
 import { Device, DialogSaveMode } from "~/Interfaces";
 
 interface Props {
   closeDialogClick: () => void;
-  saveClick: () => void;
   idleDevices: Device[];
   usedDevices: Device[];
   onSourceChange: (e: string) => void;
   onTargetChange: (e: string) => void;
   source: string;
+  target: string;
   targetDevices: Device[];
   dialogSaveMode: DialogSaveMode;
   targetKey: number;
@@ -87,12 +88,17 @@ export default function Dialog(props: Props) {
         <div>This connection already exists...</div>
       )}
       {props.dialogSaveMode == DialogSaveMode.noErrors && (
-        <button
-          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4"
-          onClick={() => props.saveClick()}
-        >
-          Save
-        </button>
+        <Form method="post">
+          <input name="source" value={props.source} hidden readOnly />
+          <input name="target" value={props.target} hidden readOnly />
+
+          <button
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            type="submit"
+          >
+            Save
+          </button>
+        </Form>
       )}
 
       <button

@@ -13,7 +13,6 @@ import {
   getDeviceTypeOutputs,
   filterUsedDevices,
   filterIdleDevices,
-  triggerPostCon,
 } from "~/IndexController";
 import { Device, DialogSaveMode } from "~/Interfaces";
 import {
@@ -42,7 +41,6 @@ export async function action({ request }: ActionFunctionArgs) {
       await postConnection(source.toString(), target.toString());
     }
   } else if (request.method == "DELETE") {
-    console.log(body);
     const id = body.get("id");
     console.log("delete", id);
     if (id != null) {
@@ -56,7 +54,6 @@ export async function action({ request }: ActionFunctionArgs) {
 export async function loader() {
   const devices = await getDevices();
   const connections = await getConnections();
-  console.log("connections", connections.length);
   const deviceTypeOutputs = await getDeviceTypeOutputs();
   const usedDevices = filterUsedDevices(connections, devices);
   const idleDevices = filterIdleDevices(usedDevices, devices);
@@ -85,30 +82,33 @@ export default function Index() {
   const [targetKey, setTargetKey] = useState(0); // force re-render of dialog, because same category lets react use the component with the previous selection
   const [dialogSaveMode, setDialogSaveMode] = useState(DialogSaveMode.initial);
   const [selectedEdge, setSelectedEdge] = useState("");
-  const [network, setNetwork] = useState<Network>();
+
+  useEffect(() => {
+    setDialogOpen(false);
+    setSource(DROPDOWN_INITAL_VALUE);
+    setDialogSaveMode(DialogSaveMode.initial);
+    setSelectedEdge("");
+  }, [loaderData.connections]);
 
   useEffect(() => {
     const container = document.getElementById("mynetwork");
     if (container == null) {
       throw new Error("#mynetwork could not be found");
     }
-    const newNetwork = new Network(
+    const network = new Network(
       container,
       loaderData.edgesAndNodes,
       loaderData.networkProperties
     );
 
-    newNetwork.on("selectEdge", (params) => {
+    network.on("selectEdge", (params) => {
       if (params.edges.length == 1) {
         setSelectedEdge(params.edges[0]);
       }
     });
-    newNetwork.on("deselectEdge", () => {
+    network.on("deselectEdge", () => {
       setSelectedEdge("");
     });
-
-    console.log("new network");
-    setNetwork(newNetwork);
   }, [loaderData.edgesAndNodes, loaderData.networkProperties]);
 
   useEffect(() => {
@@ -148,19 +148,10 @@ export default function Index() {
     }
   }, [loaderData.connections, source, target]);
 
-  function addConnectionClick() {
-    setDialogOpen(true);
-  }
-
   function closeDialogClick() {
     setDialogOpen(false);
     setSource(DROPDOWN_INITAL_VALUE);
     setDialogSaveMode(DialogSaveMode.initial);
-  }
-
-  function saveClick() {
-    triggerPostCon(source, target);
-    closeDialogClick();
   }
 
   return (
@@ -168,13 +159,13 @@ export default function Index() {
       {dialogOpen && (
         <Dialog
           closeDialogClick={closeDialogClick}
-          saveClick={saveClick}
           idleDevices={loaderData.idleDevices}
           usedDevices={loaderData.usedDevices}
           onSourceChange={setSource}
           onTargetChange={setTarget}
           targetDevices={targetDevices}
           source={source}
+          target={target}
           dialogSaveMode={dialogSaveMode}
           targetKey={targetKey}
         />
@@ -183,14 +174,14 @@ export default function Index() {
       <div className="flex justify-center items-center p-2 gap-2">
         <button
           className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          onClick={() => addConnectionClick()}
+          onClick={() => setDialogOpen(true)}
         >
           Add connection
         </button>
 
         {selectedEdge != "" && (
           <Form method="delete">
-            <input hidden name="id" value={selectedEdge} readOnly />
+            <input name="id" value={selectedEdge} hidden readOnly />
             <button
               className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
               type="submit"

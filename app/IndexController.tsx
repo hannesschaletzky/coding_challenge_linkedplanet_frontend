@@ -8,16 +8,6 @@ import {
 
 export const DROPDOWN_INITAL_VALUE = "Choose...";
 
-export function triggerPostCon(source: string, target: string) {
-  const formData = new FormData();
-  formData.append("source", source);
-  formData.append("target", target);
-  fetch("/?index", {
-    method: "POST",
-    body: formData,
-  });
-}
-
 export function determineDeviceType(deviceName: string, devices: Device[]) {
   return devices.find((device) => device.name == deviceName)?.device_type_name;
 }
