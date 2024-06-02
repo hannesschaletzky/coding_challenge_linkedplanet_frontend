@@ -17,6 +17,7 @@ const config: Config = {
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
+  testMatch: ["**/?(*.)+(unit.test).ts"], // only look for files that are named *.unit.test.ts
 };
 
 export default config;
